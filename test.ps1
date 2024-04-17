@@ -1,14 +1,21 @@
-﻿# Step 1: Install Active Directory Domain Services feature
+# Install Active Directory Domain Services role
 Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 
-# Step 2: Promote the server to a domain controller and create a new forest
-Install-ADDSForest `
-    -DomainName "kernel.com" `
-    -DomainNetbiosName "KERNEL" `
-    -ForestMode Win2016 `
-    -DomainMode Win2016 `
-    -InstallDns `
-    -NoRebootOnCompletion
+# Install DNS Server role
+Install-WindowsFeature -Name DNS -IncludeManagementTools
 
-# Step 3: Reboot the server to complete the Active Directory installation
+# Promote server to domain controller and configure DNS
+$adminPassword = ConvertTo-SecureString "qwer4321!" -AsPlainText -Force
+$domainAdminCreds = New-Object System.Management.Automation.PSCredential ("roee", $adminPassword)
+
+Install-ADDSForest `
+    -DomainName "Kernel.com" `
+    -SafeModeAdministratorPassword $domainAdminCreds.Password `
+    -Force:$true `
+    -NoDnsOnNetwork:$false `
+    -DatabasePath "C:\Windows\NTDS" `
+    -LogPath "C:\Windows\NTDS" `
+    -SysvolPath "C:\Windows\SYSVOL"
+
+# Restart the server
 Restart-Computer -Force
